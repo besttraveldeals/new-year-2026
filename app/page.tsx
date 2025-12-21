@@ -1,13 +1,13 @@
-import type { Metadata } from "next"
-import { BookingForm } from "@/components/booking-form"
-import { EventHeader } from "@/components/event-header"
-import { EventHighlights } from "@/components/event-highlights"
+import type { Metadata } from "next";
+import { BookingForm } from "@/components/booking-form";
+import { EventHeader } from "@/components/event-header";
+import { EventHighlights } from "@/components/event-highlights";
 
 export const metadata: Metadata = {
   title: "New Year Eve Bash 2025 - Book Your Tickets",
   description:
     "Join us for an unforgettable New Year celebration with DJ, unlimited food, camping, and adventure activities at Malai Marke River View Restaurant",
-}
+};
 
 export default function NYE2026Page() {
   return (
@@ -20,5 +20,5 @@ export default function NYE2026Page() {
         </div>
       </main>
     </div>
-  )
+  );
 }

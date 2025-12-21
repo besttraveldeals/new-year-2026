@@ -1,11 +1,9 @@
-import type React from "react"
-import Script from "next/script"
+import type React from "react";
 
-export default function NY26Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      {children}
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-    </>
-  )
+export default function NY26Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
 }
