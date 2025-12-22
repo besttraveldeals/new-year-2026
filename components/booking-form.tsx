@@ -19,10 +19,21 @@ const PACKAGE_PRICES = {
   group: 10000,
 }
 
+const CAMPING_PRICE = 1200 // Weekday price per person
+const ACTIVITY_PRICES = {
+  paramotor: 2000,
+  speedBoat: 150,
+  waterScooter: 400,
+  bananaRide: 200,
+  bumperRide: 400,
+  tractorRide: 200, // Per ride (includes rider + 2)
+}
+
 export function BookingForm() {
   const [selectedPackage, setSelectedPackage] = useState<PackageType>("single")
   const [wantsStay, setWantsStay] = useState(false)
   const [wantsAdventure, setWantsAdventure] = useState(false)
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -33,7 +44,59 @@ export function BookingForm() {
     groupSize: "",
   })
 
-  const basePrice = PACKAGE_PRICES[selectedPackage]
+  const calculateTotalAmount = () => {
+    let total = 0
+    let numPeople = 1
+
+    // Calculate base package price and number of people
+    if (selectedPackage === "single") {
+      total = 2000
+      numPeople = 1
+    } else if (selectedPackage === "couple") {
+      total = 3500
+      numPeople = 2
+    } else if (selectedPackage === "group") {
+      total = 10000
+      numPeople = Number.parseInt(formData.groupSize) || 6
+    }
+
+    // Add camping cost (per person)
+    if (wantsStay) {
+      total += CAMPING_PRICE * numPeople
+    }
+
+    // Add activity costs (per person, except tractor ride which is per ride)
+    if (wantsAdventure && selectedActivities.length > 0) {
+      selectedActivities.forEach((activity) => {
+        if (activity === "tractorRide") {
+          // Tractor ride is per ride (includes rider + 2), so calculate how many rides needed
+          const numRides = Math.ceil(numPeople / 3)
+          total += ACTIVITY_PRICES.tractorRide * numRides
+        } else {
+          total += ACTIVITY_PRICES[activity as keyof typeof ACTIVITY_PRICES] * numPeople
+        }
+      })
+    }
+
+    console.log("[v0] Calculation:", {
+      package: selectedPackage,
+      numPeople,
+      wantsStay,
+      campingCost: wantsStay ? CAMPING_PRICE * numPeople : 0,
+      selectedActivities,
+      total,
+    })
+
+    return total
+  }
+
+  const totalAmount = calculateTotalAmount()
+
+  const toggleActivity = (activity: string) => {
+    setSelectedActivities((prev) =>
+      prev.includes(activity) ? prev.filter((a) => a !== activity) : [...prev, activity],
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +105,15 @@ export function BookingForm() {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (selectedPackage === "group" && !formData.groupSize) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter the number of people for group package",
         variant: "destructive",
       })
       return
@@ -60,7 +132,8 @@ export function BookingForm() {
         groupSize: selectedPackage === "group" ? formData.groupSize : selectedPackage === "couple" ? "2" : "1",
         wantsStay: wantsStay ? "Yes" : "No",
         wantsAdventure: wantsAdventure ? "Yes" : "No",
-        amount: basePrice,
+        selectedActivities: selectedActivities.join(", "),
+        amount: totalAmount,
       }
 
       const response = await fetch("/api/submit-booking", {
@@ -95,7 +168,7 @@ export function BookingForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: basePrice,
+          amount: totalAmount,
           customerName: formData.fullName,
           customerEmail: formData.email,
           customerPhone: formData.phone,
@@ -108,7 +181,7 @@ export function BookingForm() {
 
       // Initialize Razorpay
       const options = {
-        key: keyId, // Use key fetched from server
+        key: keyId,
         amount: orderData.amount,
         currency: "INR",
         name: "NYE Bash 2025",
@@ -131,6 +204,7 @@ export function BookingForm() {
           setFormData({ fullName: "", email: "", phone: "", groupSize: "" })
           setWantsStay(false)
           setWantsAdventure(false)
+          setSelectedActivities([])
           setIsSubmitting(false)
         },
         modal: {
@@ -286,44 +360,112 @@ export function BookingForm() {
 
         {/* Add-ons */}
         <div className="space-y-3 pt-2 border-t border-border">
-          <Label className="text-base font-semibold text-card-foreground">Additional Options (Paid Extra)</Label>
+          <Label className="text-base font-semibold text-card-foreground">Additional Options</Label>
 
-          <div className="flex items-center space-x-3 p-3 rounded-lg bg-secondary">
-            <Checkbox id="stay" checked={wantsStay} onCheckedChange={(checked) => setWantsStay(checked as boolean)} />
-            <label
-              htmlFor="stay"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-secondary-foreground cursor-pointer flex-1"
-            >
-              Camping Stay (Limited availability)
-            </label>
+          <div className="space-y-2">
+            <div className="flex items-start space-x-3 p-3 rounded-lg bg-secondary">
+              <Checkbox id="stay" checked={wantsStay} onCheckedChange={(checked) => setWantsStay(checked as boolean)} />
+              <label
+                htmlFor="stay"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-secondary-foreground cursor-pointer flex-1"
+              >
+                <div>
+                  <div className="font-semibold">Camping Stay - ₹1,200 per person</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Riverside camping tents, includes dinner, comfortable overnight stay. Only 30 camps available.
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-3 p-3 rounded-lg bg-secondary">
-            <Checkbox
-              id="adventure"
-              checked={wantsAdventure}
-              onCheckedChange={(checked) => setWantsAdventure(checked as boolean)}
-            />
-            <label
-              htmlFor="adventure"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-secondary-foreground cursor-pointer flex-1"
-            >
-              Morning Adventure Activities
-            </label>
+          <div className="space-y-2">
+            <div className="flex items-start space-x-3 p-3 rounded-lg bg-secondary">
+              <Checkbox
+                id="adventure"
+                checked={wantsAdventure}
+                onCheckedChange={(checked) => setWantsAdventure(checked as boolean)}
+              />
+              <label
+                htmlFor="adventure"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-secondary-foreground cursor-pointer flex-1"
+              >
+                Morning Adventure Activities
+              </label>
+            </div>
+
+            {wantsAdventure && (
+              <div className="ml-6 space-y-2 mt-2">
+                <p className="text-xs text-muted-foreground mb-2">Select activities you're interested in:</p>
+                {[
+                  { id: "paramotor", label: "Paramotor Ride", price: "₹2,000 per person" },
+                  { id: "speedBoat", label: "Speed Boat", price: "₹150 per person" },
+                  { id: "waterScooter", label: "Water Scooter", price: "₹400 per person" },
+                  { id: "bananaRide", label: "Banana Ride", price: "₹200 per person" },
+                  { id: "bumperRide", label: "Bumper Ride", price: "₹400 per person" },
+                  { id: "tractorRide", label: "Mini Tractor Ride (Rider + 2)", price: "₹200 per ride" },
+                ].map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-2 p-2 rounded bg-card">
+                    <Checkbox
+                      id={activity.id}
+                      checked={selectedActivities.includes(activity.id)}
+                      onCheckedChange={() => toggleActivity(activity.id)}
+                    />
+                    <label
+                      htmlFor={activity.id}
+                      className="text-xs cursor-pointer flex-1 flex items-center justify-between"
+                    >
+                      <span>{activity.label}</span>
+                      <span className="text-primary font-semibold">{activity.price}</span>
+                    </label>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground italic mt-2">
+                  *Weekday prices (31 Dec). Activities subject to weather & availability
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Price Summary */}
         <div className="p-4 rounded-lg bg-primary/10 border border-primary">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-card-foreground">Entry Package Total</span>
-            <span className="text-2xl font-bold text-primary">₹{basePrice.toLocaleString()}</span>
+            <span className="text-lg font-semibold text-card-foreground">Total Amount</span>
+            <span className="text-2xl font-bold text-primary">₹{totalAmount.toLocaleString()}</span>
           </div>
-          {(wantsStay || wantsAdventure) && (
-            <p className="text-xs text-muted-foreground mt-2">
-              * Additional charges for stay and activities will be collected separately
-            </p>
-          )}
+          <div className="mt-2 text-xs text-muted-foreground space-y-1">
+            <div className="flex justify-between">
+              <span>Entry Package:</span>
+              <span>₹{PACKAGE_PRICES[selectedPackage].toLocaleString()}</span>
+            </div>
+            {wantsStay && (
+              <div className="flex justify-between">
+                <span>
+                  Camping (
+                  {selectedPackage === "single" ? 1 : selectedPackage === "couple" ? 2 : formData.groupSize || 6} person
+                  {selectedPackage !== "single" ? "s" : ""}):
+                </span>
+                <span>
+                  ₹
+                  {(
+                    CAMPING_PRICE *
+                    (selectedPackage === "single"
+                      ? 1
+                      : selectedPackage === "couple"
+                        ? 2
+                        : Number(formData.groupSize) || 6)
+                  ).toLocaleString()}
+                </span>
+              </div>
+            )}
+            {wantsAdventure && selectedActivities.length > 0 && (
+              <div className="flex justify-between">
+                <span>Activities ({selectedActivities.length} selected):</span>
+                <span>Calculated</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Submit Button */}
