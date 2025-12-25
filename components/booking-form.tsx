@@ -14,19 +14,19 @@ import { Loader2 } from "lucide-react"
 type PackageType = "single" | "couple" | "group"
 
 const PACKAGE_PRICES = {
-  single: 2000,
-  couple: 3500,
-  group: 10000,
+  single: 599,
+  couple: 999,
+  group: 2499,
 }
 
-const CAMPING_PRICE = 1200 // Weekday price per person
+const CAMPING_PRICE = 1500 // Updated camping price to 1500 per person
 const ACTIVITY_PRICES = {
-  paramotor: 2000,
-  speedBoat: 150,
-  waterScooter: 400,
-  bananaRide: 200,
-  bumperRide: 400,
-  tractorRide: 200, // Per ride (includes rider + 2)
+  paramotor: 2500,
+  speedBoat: 250,
+  waterScooter: 500,
+  bananaRide: 300,
+  bumperRide: 300,
+  tractorRide: 300,
 }
 
 export function BookingForm() {
@@ -50,13 +50,13 @@ export function BookingForm() {
 
     // Calculate base package price and number of people
     if (selectedPackage === "single") {
-      total = 2000
+      total = 599
       numPeople = 1
     } else if (selectedPackage === "couple") {
-      total = 3500
+      total = 999
       numPeople = 2
     } else if (selectedPackage === "group") {
-      total = 10000
+      total = 2499
       numPeople = Number.parseInt(formData.groupSize) || 6
     }
 
@@ -250,7 +250,7 @@ export function BookingForm() {
                   <p className="font-semibold text-card-foreground">Single Entry</p>
                   <p className="text-sm text-muted-foreground">1 Person</p>
                 </div>
-                <p className="text-xl font-bold text-primary">₹2,000</p>
+                <p className="text-xl font-bold text-primary">₹599</p>
               </div>
             </button>
 
@@ -268,7 +268,7 @@ export function BookingForm() {
                   <p className="font-semibold text-card-foreground">Couple Package</p>
                   <p className="text-sm text-muted-foreground">2 People</p>
                 </div>
-                <p className="text-xl font-bold text-primary">₹3,500</p>
+                <p className="text-xl font-bold text-primary">₹999</p>
               </div>
             </button>
 
@@ -286,7 +286,7 @@ export function BookingForm() {
                   <p className="font-semibold text-card-foreground">Group Package</p>
                   <p className="text-sm text-muted-foreground">6 People</p>
                 </div>
-                <p className="text-xl font-bold text-primary">₹10,000</p>
+                <p className="text-xl font-bold text-primary">₹2,499</p>
               </div>
             </button>
           </div>
@@ -370,7 +370,7 @@ export function BookingForm() {
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-secondary-foreground cursor-pointer flex-1"
               >
                 <div>
-                  <div className="font-semibold">Camping Stay - ₹1,200 per person</div>
+                  <div className="font-semibold">Camping Stay - ₹1,500 per person</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Riverside camping tents, includes dinner, comfortable overnight stay. Only 30 camps available.
                   </div>
@@ -398,12 +398,12 @@ export function BookingForm() {
               <div className="ml-6 space-y-2 mt-2">
                 <p className="text-xs text-muted-foreground mb-2">Select activities you're interested in:</p>
                 {[
-                  { id: "paramotor", label: "Paramotor Ride", price: "₹2,000 per person" },
-                  { id: "speedBoat", label: "Speed Boat", price: "₹150 per person" },
-                  { id: "waterScooter", label: "Water Scooter", price: "₹400 per person" },
-                  { id: "bananaRide", label: "Banana Ride", price: "₹200 per person" },
-                  { id: "bumperRide", label: "Bumper Ride", price: "₹400 per person" },
-                  { id: "tractorRide", label: "Mini Tractor Ride (Rider + 2)", price: "₹200 per ride" },
+                  { id: "paramotor", label: "Paramotor Ride", price: "₹2,500 per person" },
+                  { id: "speedBoat", label: "Speed Boat", price: "₹250 per person" },
+                  { id: "waterScooter", label: "Water Scooter", price: "₹500 per person" },
+                  { id: "bananaRide", label: "Banana Ride", price: "₹300 per person" },
+                  { id: "bumperRide", label: "Bumper Ride", price: "₹300 per person" },
+                  { id: "tractorRide", label: "Mini Tractor Ride (Rider + 2)", price: "₹300 per ride" },
                 ].map((activity) => (
                   <div key={activity.id} className="flex items-center space-x-2 p-2 rounded bg-card">
                     <Checkbox
