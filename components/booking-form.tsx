@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useRouter } from "next/navigation"
 
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
@@ -36,6 +37,7 @@ export function BookingForm() {
   const [selectedActivities, setSelectedActivities] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -196,16 +198,49 @@ export function BookingForm() {
           color: "#d4af37",
         },
         handler: (response: any) => {
-          toast({
-            title: "Payment Successful!",
-            description: "Your booking is confirmed. Check your email for details.",
-          })
-          // Reset form
-          setFormData({ fullName: "", email: "", phone: "", groupSize: "" })
-          setWantsStay(false)
-          setWantsAdventure(false)
-          setSelectedActivities([])
-          setIsSubmitting(false)
+          const bookingId = `NYE${Date.now()}${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+
+          // Prepare ticket data
+          const ticketData = {
+            bookingId,
+            customerName: encodeURIComponent(formData.fullName),
+            email: encodeURIComponent(formData.email),
+            phone: encodeURIComponent(formData.phone),
+            packageType: selectedPackage,
+            totalAmount: totalAmount.toString(),
+            wantsStay: wantsStay.toString(),
+            selectedActivities: selectedActivities.join(","),
+            numPeople: selectedPackage === "single" ? "1" : selectedPackage === "couple" ? "2" : formData.groupSize,
+          }
+
+          // Update Google Sheets with booking ID
+          const updateSheetData = {
+            timestamp: new Date().toISOString(),
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            bookingId: bookingId,
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id,
+            package: selectedPackage,
+            groupSize: selectedPackage === "group" ? formData.groupSize : selectedPackage === "couple" ? "2" : "1",
+            wantsStay: wantsStay ? "Yes" : "No",
+            wantsAdventure: wantsAdventure ? "Yes" : "No",
+            selectedActivities: selectedActivities.join(", "),
+            amount: totalAmount,
+            paymentStatus: "Success",
+          }
+
+          // Submit updated data to Google Sheets
+          fetch("/api/submit-booking", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updateSheetData),
+          }).catch(console.error)
+
+          // Redirect to success page with ticket data
+          const params = new URLSearchParams(ticketData)
+          router.push(`/success?${params.toString()}`)
         },
         modal: {
           ondismiss: () => {
