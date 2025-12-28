@@ -2,7 +2,6 @@
 
 import { useRef } from "react"
 import { Button } from "@/components/ui/button"
-import html2canvas from "html2canvas"
 
 interface TicketPassProps {
   bookingId: string
@@ -40,25 +39,85 @@ export function TicketPass({
 
   const handleDownload = async () => {
     if (ticketRef.current) {
-      const canvas = await html2canvas(ticketRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#1a2a4a",
-      })
-      const link = document.createElement("a")
-      link.href = canvas.toDataURL("image/png")
-      link.download = `NYE-Ticket-${bookingId}.png`
-      link.click()
+      try {
+        const canvas = await html2canvasAlternative(ticketRef.current)
+        const link = document.createElement("a")
+        link.href = canvas.toDataURL("image/png")
+        link.download = `NYE-Ticket-${bookingId}.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (error) {
+        console.error("Download failed:", error)
+        alert("Unable to download. Please try printing instead.")
+      }
     }
+  }
+
+  const html2canvasAlternative = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
+    return new Promise((resolve) => {
+      const width = element.offsetWidth
+      const height = element.offsetHeight
+
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+
+      if (!ctx) throw new Error("Canvas context not available")
+
+      canvas.width = width * 2
+      canvas.height = height * 2
+      ctx.scale(2, 2)
+
+      const html = element.innerHTML
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+          <foreignObject width="${width}" height="${height}">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px; height:${height}px; ${element.getAttribute("style")}">
+              ${html}
+            </div>
+          </foreignObject>
+        </svg>
+      `
+
+      const img = new Image()
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0)
+        resolve(canvas)
+      }
+      img.onerror = () => {
+        ctx.fillStyle = "#1a3a52"
+        ctx.fillRect(0, 0, width, height)
+        ctx.fillStyle = "#fcd34d"
+        ctx.font = "24px Arial"
+        ctx.textAlign = "center"
+        ctx.fillText(bookingId, width / 2, height / 2)
+        resolve(canvas)
+      }
+      img.src = `data:image/svg+xml;base64,${btoa(svg)}`
+    })
   }
 
   const handlePrint = () => {
     if (ticketRef.current) {
       const printWindow = window.open("", "", "width=800,height=600")
       if (printWindow) {
-        printWindow.document.write(ticketRef.current.outerHTML)
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>NYE Ticket - ${bookingId}</title>
+              <style>
+                body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                @media print { body { padding: 0; } }
+              </style>
+            </head>
+            <body>
+              ${ticketRef.current.outerHTML}
+            </body>
+          </html>
+        `)
         printWindow.document.close()
-        printWindow.print()
+        setTimeout(() => printWindow.print(), 250)
       }
     }
   }
