@@ -16,10 +16,6 @@ export function EventHighlights() {
           </li>
           <li className="flex items-start gap-3">
             <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <span className="text-card-foreground">Unlimited Pure Veg Starters Buffet</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <span className="text-card-foreground">BYOB Allowed (Bring Your Own Beverages)</span>
           </li>
           <li className="flex items-start gap-3">
